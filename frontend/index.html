@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>오늘 점심 뭐 먹지? (Vue3 + Python)</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <style>
+    :root {
+      --bg: #fffaf4;
+      --card: #fff;
+      --text: #2f2a24;
+      --muted: #7a6f63;
+      --primary: #f28b30;
+      --primary-hover: #df761a;
+      --border: #f0dfca;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 1rem;
+      font-family: "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
+      background: linear-gradient(180deg, #fff9ef, #fff3e5);
+      color: var(--text);
+    }
+    .app {
+      width: min(560px, 100%);
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 0 10px 25px rgba(90,57,19,.08);
+    }
+    h1 { margin: 0; font-size: 1.6rem; }
+    .subtitle { margin: .5rem 0 1rem; color: var(--muted); }
+    .card {
+      border: 1px dashed var(--border);
+      border-radius: 12px;
+      padding: 1rem;
+      background: #fffdfb;
+    }
+    .label { margin: 0; color: var(--muted); font-size: .9rem; }
+    .result { margin: .4rem 0 0; font-size: 1.5rem; font-weight: 700; }
+    .actions { margin-top: 1rem; display: flex; gap: .6rem; flex-wrap: wrap; }
+    button {
+      border: 1px solid var(--border);
+      background: white;
+      color: var(--text);
+      border-radius: 10px;
+      padding: .65rem .95rem;
+      font-size: .95rem;
+      cursor: pointer;
+    }
+    button.primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+    button.primary:hover { background: var(--primary-hover); }
+    .meta { margin-top: .8rem; color: var(--muted); font-size: .9rem; }
+    details { margin-top: 1rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <main id="app" class="app">
+    <h1>🍱 오늘 점심 뭐 먹지?</h1>
+    <p class="subtitle">Vue3 화면 + Python(FastAPI) 백엔드</p>
+
+    <section class="card" aria-live="polite">
+      <p class="label">추천 메뉴</p>
+      <p class="result">{{ selectedMenu }}</p>
+    </section>
+
+    <div class="actions">
+      <button class="primary" @click="pickRandomMenu">랜덤 추천받기</button>
+      <button @click="resetMenu">다시 초기화</button>
+      <button @click="loadMenus">메뉴 새로고침</button>
+    </div>
+
+    <p class="meta">API: {{ apiBase }}</p>
+
+    <details>
+      <summary>메뉴 목록 보기 ({{ menus.length }}개)</summary>
+      <ul>
+        <li v-for="menu in menus" :key="menu">{{ menu }}</li>
+      </ul>
+    </details>
+  </main>
+
+  <script>
+    const { createApp, ref, onMounted } = Vue;
+
+    createApp({
+      setup() {
+        const apiBase = `${location.protocol}//${location.hostname}:8000`;
+        const menus = ref([]);
+        const selectedMenu = ref("아직 선택되지 않았어요");
+
+        const loadMenus = async () => {
+          const res = await fetch(`${apiBase}/api/menus`);
+          const data = await res.json();
+          menus.value = data.menus || [];
+        };
+
+        const pickRandomMenu = async () => {
+          const res = await fetch(`${apiBase}/api/menus/random`);
+          const data = await res.json();
+          selectedMenu.value = data.menu || "추천 실패";
+        };
+
+        const resetMenu = () => {
+          selectedMenu.value = "아직 선택되지 않았어요";
+        };
+
+        onMounted(loadMenus);
+
+        return { apiBase, menus, selectedMenu, loadMenus, pickRandomMenu, resetMenu };
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
